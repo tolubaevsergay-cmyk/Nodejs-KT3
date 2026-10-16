@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Чат</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="chat">
+  <div class="chat__header">💬 Чат</div>
+
+  <div class="chat__body">
+  </div>
+
+  <div class="chat__footer">
+    <input class="chat__input" type="text" placeholder="Сообщение...">
+    <button class="chat__btn" onclick="sendMessage()">➤</button>
+  </div>
+
+  <aside class="users">
+    <div class="users__header">
+      👥 Онлайн:
+    </div>
+    <ul class="users__list"></ul>
+  </aside>
+  <aside class="users">
+    <label class="users__label">
+        <select class="users__select">
+            <option value="">— выберите пользователя —</option>
+        </select>
+    </label>
+</aside>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const socket = io()
+    let myId = null
+    const select = document.querySelector('.users__select')
+    socket.on('connect', ()=>{
+      const name = prompt('Как вас зовут?', 'Гость')
+      const color = prompt('Каким цветом отображать ваши сообщения?')
+      myId= socket.id
+      socket.emit('nameMes', {name: name, color: color})
+    })
+    socket.on('start', data=>{
+      const chat = document.querySelector('.chat__body')
+      const div = document.createElement('div')
+      div.className = 'msg msg--in'
+      div.textContent = data
+      chat.append(div)
+    })
+    socket.on('users', data=>{
+      const ul = document.querySelector('.users__list')
+      ul.replaceChildren()
+      for(let i=0; i<data.length; i++){
+        const li = document.createElement('li')
+        li.textContent = data[i].name
+        ul.append(li)
+      }
+      
+
+    const current = select.value
+
+    select.replaceChildren()
+
+    const placeholder = document.createElement('option')
+    placeholder.value = ''
+    placeholder.textContent = '— выберите пользователя —'
+    select.append(placeholder)
+
+    for (const u of data) {
+        const opt = document.createElement('option')
+        opt.value = u.id
+        opt.textContent = u.name
+        select.append(opt)
+    }
+
+    if ([...select.options].some(o => o.value === current)) {
+        select.value = current
+    }
+    })
+    socket.on('text', data=>{
+      const chat = document.querySelector('.chat__body')
+      const div = document.createElement('div')
+      
+      div.textContent = `${data.name}: ${data.text}`
+      div.style.backgroundColor = data.color
+      if(data.id === myId){
+        div.className = 'msg msg--out'
+      }
+      else{
+        div.className = 'msg msg--in'
+      }
+      chat.append(div)
+    })
+    const sendMessage = ()=>{      
+      const input = document.querySelector('.chat__input')
+      const value = input.value.trim()
+      if (!value) return
+      const to = select.value || null
+      socket.emit('message', {text: value, to})
+      input.value = ''
+      input.focus()
+    }
+</script>
+</body>
+</html>
