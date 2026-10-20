@@ -14,19 +14,18 @@ io.on('connection', client=>{
     client.on('nameMes', data=>{
         client.data.name = data.name
         client.data.color = data.color
-        names.set(client.id, {
-    id: client.id,
-    name: data.name})
+        names.set(client.id, { id: client.id, name: data.name })
         io.emit('users', [...names.values()])
-        
-        if(names.size > 1){
-            const list = [...names.values()].map(u => u.name)
-            client.emit('start', `Добро пожаловать. В чате уже присутствуют: ${list.join(', ')}`)
+        const others = [...names.values()]
+        .filter(u => u.id !== client.id)
+        .map(u => u.name)
+
+        if (others.length > 0) {
+            client.emit('start', `Добро пожаловать. В чате уже присутствуют: ${others.join(', ')}`)
             client.broadcast.emit('start', `К нам подключился ${client.data.name}`)
-        }
-        else{
-            client.emit('start', 'Добро пожаловать. Вы первый в чате.')
-        }
+    } else {
+        client.emit('start', 'Добро пожаловать. Вы первый в чате.')
+    }
     })
     client.on('message', data=>{
         const name = client.data.name
