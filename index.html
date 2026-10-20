@@ -37,11 +37,17 @@
     const socket = io()
     let myId = null
     const select = document.querySelector('.users__select')
+    let userName = null
+    let userColor = null
+    let askedOnce = false
     socket.on('connect', ()=>{
-      const name = prompt('Как вас зовут?', 'Гость')
-      const color = prompt('Каким цветом отображать ваши сообщения?')
-      myId= socket.id
-      socket.emit('nameMes', {name: name, color: color})
+      myId = socket.id
+  if (!askedOnce) {
+    askedOnce = true
+    userName = prompt('Как вас зовут?', 'Гость') || 'Гость'
+    userColor = prompt('Каким цветом отображать ваши сообщения?') || '#eee'
+  }
+  socket.emit('nameMes', { name: userName, color: userColor })
     })
     socket.on('start', data=>{
       const chat = document.querySelector('.chat__body')
@@ -103,6 +109,13 @@
       input.value = ''
       input.focus()
     }
+  const input = document.querySelector('.chat__input')
+  input.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    e.preventDefault()
+    sendMessage()
+  }
+})
 </script>
 </body>
 </html>
